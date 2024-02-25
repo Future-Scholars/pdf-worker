@@ -309,5 +309,4 @@ if (typeof self !== "undefined") {
 module.exports = {
 	getFulltext,
 	getRecognizerData,
-	getMetadata,
 };
