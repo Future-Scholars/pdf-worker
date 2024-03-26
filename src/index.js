@@ -28,6 +28,7 @@ async function getPdfManager(arrayBuffer, recoveryMode) {
 			standardFontDataUrl: null,
 		},
 		password: "",
+		ignoreErrors: true,
 	};
 	let pdfManager = new LocalPdfManager(pdfManagerArgs);
 	await pdfManager.ensureDoc("checkHeader", []);
