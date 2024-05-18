@@ -1,4 +1,6 @@
 const { LocalPdfManager } = require("../pdf.js/build/lib/core/pdf_manager");
+const { getDocument } = require("../pdf.js/build/lib/display/api");
+const { GlobalWorkerOptions } = require("../pdf.js/build/lib/display/worker_options");
 const { XRefParseException } = require("../pdf.js/build/lib/core/core_utils");
 
 async function getPageData(
@@ -219,6 +221,53 @@ async function getRecognizerData(
 	return data;
 }
 
+async function convertToImage(
+	url,
+	worker
+) {
+	GlobalWorkerOptions.workerPort = worker
+	const pdfDocument = await getDocument(url).promise;
+	const numPages = pdfDocument.numPages;
+
+	// create a hidden canvas element
+	let canvas = document.createElement("canvas");
+
+	const blobs = []
+	for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+		const page = await pdfDocument.getPage(pageIndex + 1);
+		var scale = 1;
+		var viewport = page.getViewport({ scale: scale });
+		var outputScale = window.devicePixelRatio || 1;
+
+		var context = canvas.getContext("2d");
+		context.clearRect(0, 0, canvas.width, canvas.height);
+
+		canvas.width = Math.floor(viewport.width * outputScale);
+		canvas.height = Math.floor(viewport.height * outputScale);
+		var transform =
+		outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined;
+		const renderContext = {
+			canvasContext: context,
+			transform: transform,
+			viewport: viewport,
+		};
+
+		await page.render(renderContext).promise;
+
+		const blob = (await new Promise((resolve) => {
+			canvas.toBlob(async (blob) => {
+			  resolve((await blob?.arrayBuffer()) || null);
+			}, "image/png");
+		}));
+
+		blobs.push(blob);
+		page.cleanup();
+	}
+
+	canvas = null;
+	return blobs;
+}
+
 function errObject(err) {
 	return JSON.parse(JSON.stringify(err, Object.getOwnPropertyNames(err)));
 }
@@ -310,4 +359,5 @@ if (typeof self !== "undefined") {
 module.exports = {
 	getFulltext,
 	getRecognizerData,
+	convertToImage,
 };

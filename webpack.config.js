@@ -26,5 +26,13 @@ module.exports = {
 	},
 	resolve: {
 		extensions: ['*', '.js']
-	}
+	},
+	externals: {
+		fs: 'fs',
+		http: 'http',
+		https: 'https',
+		url: 'url',
+		canvas: 'canvas',
+		
+	},
 };
